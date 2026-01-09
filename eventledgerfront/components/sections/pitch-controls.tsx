@@ -4,11 +4,11 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { usePresenterStore } from "@/store/presenter-store"
 import { useScrollSpy } from "@/hooks/use-scroll-spy"
+import { WALRUS_ASCII } from "@/lib/ascii"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
-
 const SECTIONS = [
     { id: "hero", label: "Intro", time: "0-2m" },
     { id: "problem", label: "Problem", time: "2-5m" },
@@ -49,26 +49,14 @@ export function PitchControls() {
             <div className="container flex h-16 items-center justify-between px-4">
                 {/* Left: Logo */}
                 <div className="flex items-center gap-2">
-                    <div className="relative h-8 w-8 overflow-hidden rounded-sm bg-primary p-1">
-                        <svg viewBox="0 0 24 24" className="h-full w-full" fill="none">
-                            {/* White inner square */}
-                            <rect x="4" y="4" width="16" height="16" fill="white" />
-
-                            {/* Teal Cross */}
-                            <path d="M11 7h2v10h-2z" className="fill-primary" />
-                            <path d="M7 11h10v2h-10z" className="fill-primary" />
-
-                            {/* Teal Dots */}
-                            <rect x="6" y="6" width="2" height="2" className="fill-primary" />
-                            <rect x="16" y="16" width="2" height="2" className="fill-primary" />
-                        </svg>
-                    </div>
-                    <span className="font-bold tracking-tight">EventLedger</span>
-                    {isPresenterMode && (
-                        <span className="ml-2 rounded bg-white/10 px-2 py-0.5 text-xs text-muted-foreground">
-                            Walrus RFP
+                    <div className="relative select-none w-fit origin-left scale-75 sm:scale-100 lg:scale-125">
+                        <pre className="text-[2px] leading-[2px] text-white/90 font-bold whitespace-pre block">
+                            {WALRUS_ASCII}
+                        </pre>
+                        <span className="absolute -bottom-3 -right-2 text-cyan-400 font-mono text-[8px] font-bold tracking-widest scale-75 origin-top-left">
+                            v1.0.0
                         </span>
-                    )}
+                    </div>
                 </div>
 
                 {/* Center: Progress */}

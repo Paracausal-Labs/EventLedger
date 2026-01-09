@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ArrowRight, ChevronRight, ShieldCheck, Database, Ticket } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { WALRUS_ASCII } from "@/lib/ascii"
 import { usePresenterStore } from "@/store/presenter-store"
 import { cn } from "@/lib/utils"
 
@@ -35,17 +36,34 @@ export function Hero() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6 }}
                 >
+                    <span className="text-3xl md:text-5xl font-mono text-cyan-400 font-bold tracking-widest uppercase mb-4 block">
+                        Walrus First
+                    </span>
+
                     <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm text-primary">
                         <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse" />
                         Walrus-Native Event Protocol
                     </div>
 
-                    <h1 className={cn(
-                        "font-bold tracking-tighter text-white",
-                        isPresenterMode ? "text-6xl lg:text-8xl" : "text-5xl lg:text-7xl"
-                    )}>
-                        EventLedger
-                    </h1>
+                    <div className="relative mb-8 select-none mx-auto lg:mx-0 w-fit">
+                        <motion.pre
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="text-[0.4rem] leading-[0.4rem] md:text-[6px] md:leading-[6px] lg:text-[10px] lg:leading-[10px] text-white/80 font-bold whitespace-pre block"
+                        >
+                            {WALRUS_ASCII}
+                        </motion.pre>
+
+                        <motion.span
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                            className="absolute -bottom-4 right-0 text-cyan-400 font-mono text-xs md:text-sm font-bold tracking-widest"
+                        >
+                            v1.0.0
+                        </motion.span>
+                    </div>
 
                     <p className={cn(
                         "text-muted-foreground",
