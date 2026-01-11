@@ -4,10 +4,10 @@ import { useState } from "react"
 import { PitchControls } from "@/components/sections/pitch-controls"
 import { Hero } from "@/components/sections/hero"
 import { Architecture } from "@/components/sections/architecture"
-import { Timeline } from "@/components/sections/timeline"
-import { Ecosystem } from "@/components/sections/ecosystem"
-import { Risks } from "@/components/sections/risks"
-import { Close } from "@/components/sections/close"
+import { TimelineMilestonesScroll } from "@/components/sections/timeline-milestones-scroll"
+import { AdoptionGTMGlobeSection } from "@/components/sections/adoption-gtm-globe"
+import { RisksMitigationScroll } from "@/components/sections/risks-mitigation-scroll"
+import { ClosingNextStepsQuestionsSection } from "@/components/sections/closing-next-steps-questions-section"
 import { CLIIntro } from "@/components/intro/cli-intro"
 import { ComparisonShuffleSection } from "@/components/sections/comparison-shuffle"
 import { MotivationScrollStory } from "@/components/sections/motivation-scroll-story"
@@ -35,10 +35,10 @@ export default function Home() {
             <MotivationScrollStory />
             <MVPEvolutionSection />
             <Architecture />
-            <Timeline />
-            <Ecosystem />
-            <Risks />
-            <Close />
+            <AdoptionGTMGlobeSection />
+            <TimelineMilestonesScroll />
+            <RisksMitigationScroll />
+            <ClosingNextStepsQuestionsSection />
           </motion.div>
         )}
       </AnimatePresence>

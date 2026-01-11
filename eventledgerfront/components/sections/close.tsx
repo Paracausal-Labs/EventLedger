@@ -9,7 +9,7 @@ export function Close() {
             <div className="mx-auto max-w-2xl text-center">
                 <h2 className="mb-6 text-3xl font-bold tracking-tight">Ready to Ship</h2>
                 <p className="mb-10 text-xl text-muted-foreground">
-                    We want to ship the Walrus reference implementation for event registration and ticketing — clean primitives + great UX.
+                    We want to ship the Walrus reference implementation for event registration and ticketing - clean primitives + great UX.
                 </p>
 
                 <div className="mb-12 rounded-xl border border-white/10 bg-white/[0.02] p-8 text-left">
