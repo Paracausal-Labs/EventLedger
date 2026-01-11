@@ -3,15 +3,15 @@
 import { useState } from "react"
 import { PitchControls } from "@/components/sections/pitch-controls"
 import { Hero } from "@/components/sections/hero"
-import { MVPWrapper } from "@/components/sections/mvp-checklist"
 import { Architecture } from "@/components/sections/architecture"
-import { EnsureProof } from "@/components/sections/ensure-proof"
 import { Timeline } from "@/components/sections/timeline"
 import { Ecosystem } from "@/components/sections/ecosystem"
 import { Risks } from "@/components/sections/risks"
 import { Close } from "@/components/sections/close"
 import { CLIIntro } from "@/components/intro/cli-intro"
 import { ComparisonShuffleSection } from "@/components/sections/comparison-shuffle"
+import { MotivationScrollStory } from "@/components/sections/motivation-scroll-story"
+import { MVPEvolutionSection } from "@/components/sections/mvp-evolution-section"
 import { AnimatePresence, motion } from "framer-motion"
 
 export default function Home() {
@@ -32,9 +32,9 @@ export default function Home() {
             <PitchControls />
             <Hero />
             <ComparisonShuffleSection />
-            <MVPWrapper />
+            <MotivationScrollStory />
+            <MVPEvolutionSection />
             <Architecture />
-            <EnsureProof />
             <Timeline />
             <Ecosystem />
             <Risks />
