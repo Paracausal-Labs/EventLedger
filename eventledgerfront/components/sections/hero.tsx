@@ -7,6 +7,7 @@ import { WALRUS_ASCII } from "@/lib/ascii"
 import { usePresenterStore } from "@/store/presenter-store"
 import { cn } from "@/lib/utils"
 
+
 export function Hero() {
     const { isPresenterMode } = usePresenterStore()
 
@@ -111,59 +112,33 @@ export function Hero() {
                     </div>
                 </motion.div>
 
-                {/* Visual - Abstract Dot Map / Diagram */}
+                {/* Visual - Background Video Replacement */}
                 <motion.div
-                    className="relative hidden lg:block"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative hidden lg:flex h-[600px] w-full items-center justify-end overflow-hidden rounded-2xl border border-white/5 bg-black/20"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                    <div className="relative aspect-square w-full rounded-2xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-sm">
-                        {/* Simple SVG Diagram Placeholder */}
-                        <svg viewBox="0 0 400 400" className="h-full w-full stroke-primary/50" fill="none">
-                            <circle cx="200" cy="200" r="100" strokeWidth="1" strokeDasharray="4 4" className="animate-[spin_20s_linear_infinite]" />
-                            <circle cx="200" cy="200" r="150" strokeWidth="1" strokeOpacity="0.2" />
-                            <circle cx="200" cy="200" r="50" className="fill-primary/10 stroke-primary" />
-
-                            {/* Nodes */}
-                            <circle cx="200" cy="100" r="4" className="fill-white" />
-                            <circle cx="300" cy="200" r="4" className="fill-white" />
-                            <circle cx="200" cy="300" r="4" className="fill-white" />
-                            <circle cx="100" cy="200" r="4" className="fill-white" />
-
-                            {/* Connecting lines */}
-                            <path d="M200 150 L200 100" strokeOpacity="0.5" />
-                            <path d="M250 200 L300 200" strokeOpacity="0.5" />
-                            <path d="M200 250 L200 300" strokeOpacity="0.5" />
-                            <path d="M150 200 L100 200" strokeOpacity="0.5" />
-                        </svg>
-
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="text-xs font-mono uppercase text-primary mb-1">Blob Storage</div>
-                                <div className="text-2xl font-bold tracking-tight">WALRUS</div>
-                            </div>
-                        </div>
-
-                        {/* Floating cards */}
-                        <motion.div
-                            className="absolute top-10 right-10 rounded-lg border border-white/10 bg-black/60 p-4 backdrop-blur-md"
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    {/* Background Video */}
+                    <div className="absolute inset-0 z-0">
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="h-full w-full object-cover object-right"
                         >
-                            <div className="text-xs text-muted-foreground">Encrypted via Seal</div>
-                            <div className="font-mono text-sm text-white">TicketPayload.blob</div>
-                        </motion.div>
-
-                        <motion.div
-                            className="absolute bottom-20 left-10 rounded-lg border border-white/10 bg-black/60 p-4 backdrop-blur-md"
-                            animate={{ y: [0, 10, 0] }}
-                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        >
-                            <div className="text-xs text-muted-foreground">On-Chain Asset</div>
-                            <div className="font-mono text-sm text-white">Sui::EventNFT</div>
-                        </motion.div>
+                            <source src="/backgroundvideo.mp4" type="video/mp4" />
+                        </video>
+                        {/* Gradient Overlays for integration */}
+                        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#0B0F12]/20 to-[#0B0F12]" />
                     </div>
+
+                    {/* Logo Obscuring Blur (Bottom Right) */}
+                    <div className="absolute bottom-0 right-0 z-20 h-24 w-32 bg-gradient-to-t from-[#0B0F12] via-[#0B0F12]/80 to-transparent backdrop-blur-xl" />
+
+                    {/* Focus Glow (Right Side) */}
+                    <div className="absolute right-[10%] top-1/2 z-10 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-cyan-500/20 blur-[100px]" />
                 </motion.div>
             </div>
         </section>
