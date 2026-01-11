@@ -130,15 +130,10 @@ export function Hero() {
                         >
                             <source src="/backgroundvideo.mp4" type="video/mp4" />
                         </video>
-                        {/* Gradient Overlays for integration */}
-                        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#0B0F12]/20 to-[#0B0F12]" />
                     </div>
 
                     {/* Logo Obscuring Blur (Bottom Right) */}
                     <div className="absolute bottom-0 right-0 z-20 h-24 w-32 bg-gradient-to-t from-[#0B0F12] via-[#0B0F12]/80 to-transparent backdrop-blur-xl" />
-
-                    {/* Focus Glow (Right Side) */}
-                    <div className="absolute right-[10%] top-1/2 z-10 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-cyan-500/20 blur-[100px]" />
                 </motion.div>
             </div>
         </section>
