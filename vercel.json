@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd eventledgerfront && npm run build",
-  "outputDirectory": "eventledgerfront/.next",
-  "installCommand": "cd eventledgerfront && npm install",
-  "framework": "nextjs"
-}
