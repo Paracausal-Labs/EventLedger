@@ -6,13 +6,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
 import { motion } from "framer-motion"
 import {
-    MapPin, Users, Globe, Database, Lock,
+    MapPin, Users, Globe as GlobeIcon, Database, Lock,
     Share2, Network, Milestone, ArrowRight
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { usePresenterStore } from "@/store/presenter-store"
+import { Globe } from "@/components/3d/globe"
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -44,7 +45,7 @@ const CHAPTERS = [
         cards: [
             { icon: Network, text: "Ecosystem meetups (chapters, builders)" },
             { icon: Milestone, text: "Grants rounds (eligibility + reputation)" },
-            { icon: Globe, text: "Conferences / side-events (proof)" }
+            { icon: GlobeIcon, text: "Conferences / side-events (proof)" }
         ],
         gtm: ["Events onboarded -> Increasing", "Cross-pollination of data"]
     },
@@ -56,7 +57,7 @@ const CHAPTERS = [
         cards: [
             { icon: Database, text: "Walrus Blobs: Rich event metadata" },
             { icon: Lock, text: "Seal Encryption: Private ticket payloads" },
-            { icon: Globe, text: "Walrus Sites: Verifiable event pages" }
+            { icon: GlobeIcon, text: "Walrus Sites: Verifiable event pages" }
         ],
         callout: "Location links, QR payloads, agenda updates - all need controlled access."
     },
@@ -138,8 +139,8 @@ export function AdoptionGTMGlobeSection() {
         <section id="adoption-globe" ref={containerRef} className="relative flex min-h-screen w-full bg-[#0B0F12] overflow-hidden">
 
             {/* BACKGROUND GLOBE - RIGHT SIDE (Mobile: Hidden/Subtle) */}
-            <div className="absolute inset-0 md:left-1/3 z-0 opacity-40 md:opacity-100">
-                {/* Empty for now, awaiting Globe */}
+            <div className="absolute inset-0 md:left-1/3 z-0 opacity-40 md:opacity-100 pointer-events-none">
+                <Globe />
             </div>
 
             {/* CONTENT CONTAINER */}
