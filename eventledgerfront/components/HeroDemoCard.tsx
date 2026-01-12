@@ -32,13 +32,24 @@ const TIMING = {
     RESET_FADE: 1000,
 }
 
+const TARGETS = {
+    name: "Walrus Hackathon",
+    date: "Jan 25, 2026",
+    location: "Walrus HQ, SF",
+    capacity: "500",
+    desc: "Join us for an exciting hackathon event!"
+}
+
 // --- Main Component ---
 export function HeroDemoCard() {
     const { isPresenterMode } = usePresenterStore()
     const [scene, setScene] = useState<SceneState>("FORM")
 
     useEffect(() => {
-        let timeout: NodeJS.Timeout
+        let isMounted = true
+
+        const wait = (ms: number) =>
+            new Promise((resolve) => setTimeout(resolve, isPresenterMode ? ms * 1.5 : ms))
 
         const runSequence = async () => {
             if (!isPresenterMode) {
@@ -48,33 +59,37 @@ export function HeroDemoCard() {
             // 1. FORM STATE
             setScene("FORM")
             await wait(TIMING.FORM_TYPING + 2000)
+            if (!isMounted) return
 
             // 2. CLICK SUBMIT
             setScene("SUBMIT")
             await wait(TIMING.SPINNER + 500)
+            if (!isMounted) return
 
             // 3. EVENT PAGE
             setScene("EVENT_PAGE")
             await wait(TIMING.EVENT_PAGE_VIEW)
+            if (!isMounted) return
 
             // 4. JOIN FOUNTAIN
             setScene("JOIN_FOUNTAIN")
             await wait(TIMING.FOUNTAIN_RISE)
+            if (!isMounted) return
 
             // 5. RESET
             setScene("RESET")
             await wait(TIMING.RESET_FADE)
+            if (!isMounted) return
 
             runSequence()
         }
 
         runSequence()
 
-        return () => clearTimeout(timeout)
+        return () => {
+            isMounted = false
+        }
     }, [isPresenterMode])
-
-    const wait = (ms: number) =>
-        new Promise((resolve) => setTimeout(resolve, isPresenterMode ? ms * 1.5 : ms))
 
     return (
         <div
