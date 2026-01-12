@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { PitchControls } from "@/components/sections/pitch-controls"
 import { Hero } from "@/components/sections/hero"
-import { Architecture } from "@/components/sections/architecture"
+import { ArchitectureFlowSection } from "@/components/sections/architecture-flow-section"
 import { TimelineMilestonesScroll } from "@/components/sections/timeline-milestones-scroll"
 import { AdoptionGTMGlobeSection } from "@/components/sections/adoption-gtm-globe"
 import { RisksMitigationScroll } from "@/components/sections/risks-mitigation-scroll"
@@ -34,7 +34,7 @@ export default function Home() {
             <ComparisonShuffleSection />
             <MotivationScrollStory />
             <MVPEvolutionSection />
-            <Architecture />
+            <ArchitectureFlowSection />
             <AdoptionGTMGlobeSection />
             <TimelineMilestonesScroll />
             <RisksMitigationScroll />

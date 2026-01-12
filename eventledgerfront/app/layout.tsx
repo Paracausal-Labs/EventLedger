@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 export const metadata: Metadata = {
   title: "EventLedger - Walrus RFP",
   description: "Walrus-native event registration and ticketing on Sui.",
+  icons: {
+    icon: "/walrusremoved.png",
+  },
 };
 
 export default function RootLayout({

@@ -8,6 +8,8 @@ import { usePresenterStore } from "@/store/presenter-store"
 import { cn } from "@/lib/utils"
 
 
+import { FloatingWalrusScene } from "@/components/3d/floating-walrus-scene"
+
 export function Hero() {
     const { isPresenterMode } = usePresenterStore()
 
@@ -22,7 +24,7 @@ export function Hero() {
     }
 
     return (
-        <section id="hero" className="relative flex min-h-[90vh] flex-col justify-center overflow-hidden pt-16">
+        <section id="hero" className="relative flex min-h-[90vh] flex-col overflow-hidden pt-4">
             {/* Background Decor */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[120px]" />
@@ -114,26 +116,12 @@ export function Hero() {
 
                 {/* Visual - Background Video Replacement */}
                 <motion.div
-                    className="relative hidden lg:flex h-[600px] w-full items-center justify-end overflow-hidden rounded-2xl border border-white/5 bg-black/20"
+                    className="relative hidden lg:flex h-[600px] w-full items-center justify-center pointer-events-none"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                    {/* Background Video */}
-                    <div className="absolute inset-0 z-0">
-                        <video
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="h-full w-full object-cover object-right"
-                        >
-                            <source src="/backgroundvideo.mp4" type="video/mp4" />
-                        </video>
-                    </div>
-
-                    {/* Logo Obscuring Blur (Bottom Right) */}
-                    <div className="absolute bottom-0 right-0 z-20 h-24 w-32 bg-gradient-to-t from-[#0B0F12] via-[#0B0F12]/80 to-transparent backdrop-blur-xl" />
+                    <FloatingWalrusScene />
                 </motion.div>
             </div>
         </section>
