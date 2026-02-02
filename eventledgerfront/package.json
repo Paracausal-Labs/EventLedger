@@ -24,6 +24,7 @@
     "framer-motion": "^11.2.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.378.0",
+    "mermaid": "^11.12.2",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -33,6 +34,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/mermaid": "^9.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
