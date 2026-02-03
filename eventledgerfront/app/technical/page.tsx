@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { MermaidFullscreenViewer } from "@/components/mermaid-fullscreen-viewer";
 import { PitchControls } from "@/components/sections/pitch-controls";
 import { ClosingNextStepsQuestionsSection } from "@/components/sections/closing-next-steps-questions-section";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -526,78 +526,11 @@ ES -->|"if within window"| PEND
 `,
     },
     {
-        id: "multi-chain-payout",
-        title: "Multi-chain Payout Adapter (Sui-first receipts → optional settlement rails)",
-        description: "Prize payout architecture: results finalize on Sui and produce an immutable on-chain receipt (winners, amounts, criteria hash). Then payouts can be done (A) fully on Sui, (B) off-chain treasury executes payouts on another chain based on the public receipt, or (C) future bridge adapter moves funds to destination chain.",
-        mermaidCode: `
-%% DIAGRAM 13 - MULTI-CHAIN PAYOUT ADAPTER (SUI-FIRST RECEIPTS -> OPTIONAL SETTLEMENT RAILS)
-%%{init: {"flowchart":{"defaultRenderer":"elk"},"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
-flowchart TB
-classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
-classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
-classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
-classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
-
-subgraph Title["MULTI-CHAIN PAYOUT ADAPTER (SUI-FIRST RECEIPTS -> OPTIONAL SETTLEMENT RAILS)"]
-direction TB
-end
-
-subgraph Parties["Parties"]
-ORG["Organizer"]:::card
-JDG["Judges / Admin"]:::card
-WIN["Winner(s)"]:::card
-end
-
-subgraph Core["Core (Always)"]
-SUI["Sui<br/>Event + Prize Objects"]:::muted
-ESC["Escrow / PrizeVault (V2)<br/>- lock_prize()<br/>- finalize_winners()<br/>- generate_receipt()"]:::muted
-REC["On-chain Receipt<br/>(winners, amounts,<br/>criteria hash, timestamp)"]:::accent
-end
-
-subgraph RailA["Rail A: Sui-native payout (MVP/V2)"]
-SUIPAY["Sui payout<br/>transfer Coin<SUI> / token"]:::accent
-end
-
-subgraph RailB["Rail B: Proof + offchain payout (EVM/Solana)"]
-SAFE["Offchain Multisig / Treasury<br/>(Safe / custodian / DAO ops)"]:::card
-PROOF["Receipt Verifier<br/>- reads Sui receipt<br/>- displays winners + amounts"]:::muted
-end
-
-subgraph RailC["Rail C: Bridge-based adapter (Future, optional)"]
-BR["Bridge Adapter<br/>(lock/bridge funds)"]:::muted
-DST["Destination chain payout<br/>(EVM/Solana token transfer)"]:::muted
-end
-
-ORG -->|"lock prize funds (optional)"| ESC
-JDG -->|"submit final results (commit hash / criteria)"| ESC
-ESC -->|"finalize_winners()"| REC
-
-REC -->|"Path 1: pay on Sui"| SUIPAY
-SUIPAY -->|"winner receives"| WIN
-
-REC -->|"Path 2: public verifiable receipt"| PROOF
-PROOF -->|"ops executes payout based on receipt"| SAFE
-SAFE -->|"payout on chosen chain"| WIN
-
-REC -->|"Path 3: bridge adapter (optional)"| BR
-BR -->|"bridge to target chain"| DST
-DST -->|"winner receives"| WIN
-
-subgraph Notes["Key Guarantees"]
-G1["Honest scope:<br/>MVP = Sui-first settlement<br/>Non-Sui = receipt + offchain payout"]:::card
-G2["Composable audit trail:<br/>anyone can verify winners + amounts<br/>without trusting EventLedger backend"]:::card
-end
-
-REC -. "publishes" .-> G2
-G1 -. "sets expectation" .-> SUI
-`,
-    },
-    {
         id: "walrus-lifecycle",
         title: "Walrus Blob Lifecycle / Retention / Renewal (Durability)",
         description: "Storage durability model: different blob types (metadata, site bundle, encrypted ticket payload, post-event archive) are governed by a retention policy. Renewal jobs keep blobs alive before expiry; indexer monitors age/health; if renewal is missed, UX falls back to cached snapshots and \"pending\" states until rehydrated.",
         mermaidCode: `
-%% DIAGRAM 14 - WALRUS BLOB LIFECYCLE
+%% DIAGRAM 13 - WALRUS BLOB LIFECYCLE
 %%{init: {"flowchart":{"defaultRenderer":"elk"},"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
 classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
@@ -660,6 +593,73 @@ POL -. "enforces" .-> STR3
 T -. "supports" .-> STR2
 `,
     },
+    {
+        id: "multi-chain-payout",
+        title: "Multi-chain Payout Adapter (Sui-first receipts → optional settlement rails)",
+        description: "Prize payout architecture: results finalize on Sui and produce an immutable on-chain receipt (winners, amounts, criteria hash). Then payouts can be done (A) fully on Sui, (B) off-chain treasury executes payouts on another chain based on the public receipt, or (C) future bridge adapter moves funds to destination chain.",
+        mermaidCode: `
+%% DIAGRAM 14 - MULTI-CHAIN PAYOUT ADAPTER (SUI-FIRST RECEIPTS -> OPTIONAL SETTLEMENT RAILS)
+%%{init: {"flowchart":{"defaultRenderer":"elk"},"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
+flowchart TB
+classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
+classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
+classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
+classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
+
+subgraph Title["MULTI-CHAIN PAYOUT ADAPTER (SUI-FIRST RECEIPTS -> OPTIONAL SETTLEMENT RAILS)"]
+direction TB
+end
+
+subgraph Parties["Parties"]
+ORG["Organizer"]:::card
+JDG["Judges / Admin"]:::card
+WIN["Winner(s)"]:::card
+end
+
+subgraph Core["Core (Always)"]
+SUI["Sui<br/>Event + Prize Objects"]:::muted
+ESC["Escrow / PrizeVault (V2)<br/>- lock_prize()<br/>- finalize_winners()<br/>- generate_receipt()"]:::muted
+REC["On-chain Receipt<br/>(winners, amounts,<br/>criteria hash, timestamp)"]:::accent
+end
+
+subgraph RailA["Rail A: Sui-native payout (MVP/V2)"]
+SUIPAY["Sui payout<br/>transfer Coin<SUI> / token"]:::accent
+end
+
+subgraph RailB["Rail B: Proof + offchain payout (EVM/Solana)"]
+SAFE["Offchain Multisig / Treasury<br/>(Safe / custodian / DAO ops)"]:::card
+PROOF["Receipt Verifier<br/>- reads Sui receipt<br/>- displays winners + amounts"]:::muted
+end
+
+subgraph RailC["Rail C: Bridge-based adapter (Future, optional)"]
+BR["Bridge Adapter<br/>(lock/bridge funds)"]:::muted
+DST["Destination chain payout<br/>(EVM/Solana token transfer)"]:::muted
+end
+
+ORG -->|"lock prize funds (optional)"| ESC
+JDG -->|"submit final results (commit hash / criteria)"| ESC
+ESC -->|"finalize_winners()"| REC
+
+REC -->|"Path 1: pay on Sui"| SUIPAY
+SUIPAY -->|"winner receives"| WIN
+
+REC -->|"Path 2: public verifiable receipt"| PROOF
+PROOF -->|"ops executes payout based on receipt"| SAFE
+SAFE -->|"payout on chosen chain"| WIN
+
+REC -->|"Path 3: bridge adapter (optional)"| BR
+BR -->|"bridge to target chain"| DST
+DST -->|"winner receives"| WIN
+
+subgraph Notes["Key Guarantees"]
+G1["Honest scope:<br/>MVP = Sui-first settlement<br/>Non-Sui = receipt + offchain payout"]:::card
+G2["Composable audit trail:<br/>anyone can verify winners + amounts<br/>without trusting EventLedger backend"]:::card
+end
+
+REC -. "publishes" .-> G2
+G1 -. "sets expectation" .-> SUI
+`,
+    },
 ];
 
 export default function TechnicalPage() {
@@ -668,6 +668,49 @@ export default function TechnicalPage() {
         id: string;
         title: string;
     } | null>(null);
+
+    const [isSticky, setIsSticky] = useState(false);
+    const indexRef = useRef<HTMLDivElement>(null);
+    const [activeSection, setActiveSection] = useState<string>("");
+
+    // Scroll detection for sticky sidebar
+    useEffect(() => {
+        const handleScroll = () => {
+            if (indexRef.current) {
+                const indexBottom = indexRef.current.getBoundingClientRect().bottom;
+                setIsSticky(indexBottom <= 0);
+            }
+
+            // Detect active section
+            const sections = architectureDiagrams.map(d => document.getElementById(d.id));
+            const currentSection = sections.find(section => {
+                if (section) {
+                    const rect = section.getBoundingClientRect();
+                    return rect.top <= 300 && rect.bottom >= 300;
+                }
+                return false;
+            });
+
+            if (currentSection) {
+                setActiveSection(currentSection.id);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const scrollToSection = (id: string) => {
+        const element = document.getElementById(id);
+        if (element) {
+            const offset = 200;
+            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({
+                top: elementPosition - offset,
+                behavior: "smooth",
+            });
+        }
+    };
 
     return (
         <main className="min-h-screen bg-background text-foreground selection:bg-primary/20">
@@ -726,7 +769,7 @@ export default function TechnicalPage() {
             </section>
 
             {/* Index / Table of Contents */}
-            <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-lg">
+            <div ref={indexRef} className="bg-card/95 backdrop-blur-md border-b border-border shadow-lg">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -743,17 +786,7 @@ export default function TechnicalPage() {
                         {architectureDiagrams.map((diagram, index) => (
                             <button
                                 key={diagram.id}
-                                onClick={() => {
-                                    const element = document.getElementById(diagram.id);
-                                    if (element) {
-                                        const offset = 200; // Account for sticky header + index
-                                        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-                                        window.scrollTo({
-                                            top: elementPosition - offset,
-                                            behavior: "smooth",
-                                        });
-                                    }
-                                }}
+                                onClick={() => scrollToSection(diagram.id)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-primary/10 hover:text-primary transition-colors group border border-transparent hover:border-primary/30"
                             >
                                 <span className="text-primary/60 font-mono text-xs group-hover:text-primary transition-colors">
@@ -768,12 +801,68 @@ export default function TechnicalPage() {
                 </motion.div>
             </div>
 
+            {/* Sticky Sidebar Navigation - Appears when scrolled past index */}
+            <AnimatePresence>
+                {isSticky && (
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-64 bg-card/95 backdrop-blur-md border-r border-border shadow-lg z-40 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent hover:scrollbar-thumb-primary/50"
+                        style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'rgba(6, 182, 212, 0.3) transparent',
+                        }}
+                    >
+                        <div className="p-4">
+                            <div className="flex items-center gap-2 mb-4 sticky top-0 bg-card/95 pb-3">
+                                <div className="w-1 h-6 bg-primary rounded-full" />
+                                <h3 className="text-xs font-bold text-primary uppercase tracking-wider">
+                                    Architecture
+                                </h3>
+                            </div>
+                            <div className="space-y-1">
+                                {architectureDiagrams.map((diagram, index) => (
+                                    <button
+                                        key={diagram.id}
+                                        onClick={() => scrollToSection(diagram.id)}
+                                        className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-all group border ${activeSection === diagram.id
+                                            ? "bg-primary/20 border-primary/50 text-primary"
+                                            : "border-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                            }`}
+                                    >
+                                        <span
+                                            className={`font-mono text-xs font-bold mt-0.5 shrink-0 ${activeSection === diagram.id
+                                                ? "text-primary"
+                                                : "text-primary/60 group-hover:text-primary"
+                                                }`}
+                                        >
+                                            {String(index + 1).padStart(2, "0")}
+                                        </span>
+                                        <span
+                                            className={`text-xs leading-relaxed ${activeSection === diagram.id
+                                                ? "text-primary font-medium"
+                                                : "text-muted-foreground group-hover:text-primary"
+                                                }`}
+                                        >
+                                            {diagram.title}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Content */}
-            <div className="container mx-auto px-6 py-20">
+            <div className={`container mx-auto px-6 py-20 transition-all duration-300 ${isSticky ? "lg:ml-64" : ""}`}>
                 <div className="space-y-20">
                     {architectureDiagrams.map((diagram, index) => (
                         <motion.section
                             key={diagram.id}
+                            id={diagram.id}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "-100px" }}

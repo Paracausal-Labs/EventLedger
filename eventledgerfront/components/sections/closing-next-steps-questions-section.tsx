@@ -66,7 +66,7 @@ export function ClosingNextStepsQuestionsSection() {
                     <Badge variant="outline" className="mb-4 border-emerald-500/30 text-emerald-400">Status: Ready</Badge>
                     <h2 className={cn("font-bold text-white mb-4", isPresenterMode ? "text-5xl" : "text-4xl")}>Ready to Ship</h2>
                     <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                        “We are ready to ship the Walrus reference implementation for event registration and ticketing — clean primitives, real usage, great UX.”
+                        "We are ready to ship the Walrus reference implementation for event registration and ticketing — clean primitives, real usage, great UX."
                     </p>
                 </motion.div>
 
@@ -104,7 +104,7 @@ export function ClosingNextStepsQuestionsSection() {
                             transition={{ delay: 1.2 }}
                             className="mt-8 pt-6 border-t border-white/5"
                         >
-                            <p className="text-sm text-slate-500 italic">“Phase 1 starts within 48 hours of confirmation.”</p>
+                            <p className="text-sm text-slate-500 italic">"Ride the Walrus. Build the future."</p>
                         </motion.div>
 
                         {/* Subtle Progress Bar */}
@@ -135,7 +135,7 @@ export function ClosingNextStepsQuestionsSection() {
 
                         <div className="relative z-10">
                             <h3 className={cn("font-bold text-white mb-2", isPresenterMode ? "text-4xl" : "text-3xl")}>Open for Questions</h3>
-                            <p className="text-slate-400 mb-8 max-w-sm mx-auto">“Happy to go deeper on architecture, scope, or timelines.”</p>
+                            <p className="text-slate-400 mb-8 max-w-sm mx-auto">"Happy to go deeper on architecture, scope, or timelines."</p>
 
                             <div className="flex flex-wrap justify-center gap-3">
                                 {CHIPS.map((chip, i) => (
