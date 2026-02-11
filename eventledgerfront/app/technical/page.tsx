@@ -52,7 +52,7 @@ end
 
 subgraph SaaS["Integrations"]
 EMAIL["Resend (Email)"]:::muted
-WNOTIF["Push/Notifi (Wallet Notifs)<br/>Optional"]:::muted
+WNOTIF["Wallet Notifications<br/>Push Protocol / Notifi / WalletConnect<br/>(reminders, updates, confirmations)"]:::muted
 AN["Mixpanel"]:::muted
 end
 
@@ -92,11 +92,14 @@ classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 
 A["DIAGRAM 2 — PRIMITIVES (WHAT LIVES WHERE)"]:::muted
 
-subgraph OnChain["On-chain (Sui) — minimal state only"]
+ONLABEL["ON-CHAIN (SUI) — MINIMAL STATE ONLY"]:::muted
 EV["Event Object<br/>- event_id<br/>- organizer<br/>- metadata_blob_id<br/>- site_manifest_blob_id<br/>- params (price/capacity/flags)"]:::accent
 TK["Ticket NFT<br/>- ticket_id<br/>- event_id<br/>- owner<br/>- encrypted_blob_id (optional)<br/>- status"]:::accent
 AT["Attendance NFT<br/>- att_id<br/>- event_id<br/>- attendee<br/>- timestamp<br/>(soulbound optional)"]:::accent
-end
+
+ONLABEL --- EV
+ONLABEL --- TK
+ONLABEL --- AT
 
 subgraph Walrus["Walrus (off-chain blobs) — rich data"]
 PUB["Public Blobs<br/>- event metadata JSON<br/>- agenda/speakers/media<br/>- exports/archives (optional)"]:::card
@@ -111,6 +114,10 @@ EV --> PUB
 TK --> ENC
 AT --> PUB
 IDX -->|"rebuildable cache<br/>(not source of truth)"| EV
+
+linkStyle 0 stroke:#333,stroke-width:1px
+linkStyle 1 stroke:#333,stroke-width:1px
+linkStyle 2 stroke:#333,stroke-width:1px
 `,
     },
     {
@@ -172,6 +179,51 @@ end
 `,
     },
     {
+        id: "approval-flow",
+        title: "Organiser Approval Flow (Gated Registration)",
+        description: "For capacity-limited or curated events: attendee applies → organiser reviews → approves/rejects → only approved attendees get ticket minted. Supports both auto-approve (open events) and manual review (curated events).",
+        mermaidCode: `
+%%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
+sequenceDiagram
+participant Att as Attendee
+participant Web as Next.js UI
+participant Sui as Sui Move
+participant Org as Organizer
+participant Seal as Seal SDK
+participant Wal as Walrus
+
+Note over Att,Wal: DIAGRAM 5 — ORGANISER APPROVAL FLOW (GATED REGISTRATION)
+Att->>Web: Apply for event (zkLogin / wallet)
+Web->>Sui: submit_application(event_id, attendee_addr)
+Sui-->>Web: application_id (status: pending)
+Sui-->>Org: ApplicationSubmitted event
+
+alt Auto-approve (open events)
+Sui->>Sui: auto_approve if event.approval_required == false
+Sui-->>Web: Application approved → mint ticket
+else Manual review (curated events)
+Org->>Web: Review applications dashboard
+Org->>Sui: approve_application(application_id)
+Sui-->>Web: Application approved
+end
+
+Note over Web,Wal: Ticket mint + encrypt (same as Diagram 4)
+Web->>Sui: mint_ticket(event_id, attendee_addr)
+Sui-->>Web: ticket_id
+Web->>Seal: Encrypt ticket payload
+Seal-->>Web: ciphertext
+Web->>Wal: Upload encrypted blob
+Wal-->>Web: encrypted_blob_id
+Web->>Sui: set_encrypted_blob(ticket_id, encrypted_blob_id)
+Sui-->>Att: Ticket ready notification
+
+alt Rejected
+Org->>Sui: reject_application(application_id)
+Sui-->>Att: Application rejected notification
+end
+`,
+    },
+    {
         id: "check-in",
         title: "Check‑in + Attendance (Low connectivity + finality)",
         description: "Scanner flow: scan QR → get attendee proof/signature → submit attendance mint on Sui → handle offline mode (queue + sync later) and congestion (pending finality + retry‑safe UX).",
@@ -182,7 +234,7 @@ participant Sc as Scanner PWA
 participant Att as Attendee Wallet
 participant Sui as Sui Move
 
-Note over Sc,Sui: DIAGRAM 5 — FLOW: CHECK-IN / LOW CONNECTIVITY / FINALITY
+Note over Sc,Sui: DIAGRAM 6 — FLOW: CHECK-IN / LOW CONNECTIVITY / FINALITY
 Sc->>Sc: Scan QR -> ticket_id
 Sc->>Att: Request signature proof
 Att-->>Sc: Signature
@@ -204,7 +256,7 @@ end
     {
         id: "seal-access",
         title: "Seal Access Control (Owner‑only decrypt, transfer‑safe)",
-        description: "Explains how decrypt permission is enforced: Seal checks current Ticket NFT ownership on Sui, then allows decrypt only for the owner (transfer automatically changes who can decrypt).",
+        description: "Explains how decrypt permission is enforced: Seal checks current Ticket NFT ownership on Sui, then allows decrypt only for the owner. Also shows gated Walrus Sites content — public site shell with encrypted sections decryptable only by ticket holders.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -213,7 +265,7 @@ classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 6 — SEAL ACCESS CONTROL (OWNER-ONLY DECRYPT, TRANSFER SAFE)"]:::muted
+A["DIAGRAM 7 — SEAL ACCESS CONTROL (OWNER-ONLY DECRYPT, TRANSFER SAFE)"]:::muted
 
 subgraph State["Source of truth"]
 SUI["Sui: TicketNFT ownership<br/>(owner changes on transfer)"]:::muted
@@ -229,6 +281,14 @@ OK["Decrypt OK (current owner)"]:::accent
 NO["Denied (not owner)"]:::danger
 end
 
+subgraph WalrusSite["Walrus Sites (Gated Access)"]
+WSITE["Walrus Site<br/>(public shell + encrypted content)"]:::card
+GATED["Gated Content<br/>(agenda/location/links)<br/>encrypted via Seal"]:::accent
+end
+
+WSITE --> GATED
+GATED --> SEAL
+
 BLOB --> SEAL
 SEAL -->|"check current owner"| SUI
 SUI --> SEAL
@@ -239,7 +299,7 @@ SEAL -->|"owner=false"| NO
     {
         id: "discoverability",
         title: "Discoverability + Exports (Centralized acceleration)",
-        description: "Shows how the queue/indexer builds fast search + feeds + dashboards from Sui/Walrus signals, while keeping Sui/Walrus as truth. Also includes export/report generation for organizers.",
+        description: "Shows how the queue/indexer builds fast search + feeds + dashboards from Sui/Walrus signals, while keeping Sui/Walrus as truth. Also includes organizer exports and user data exports with privacy-preserving number-only outputs.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -247,7 +307,7 @@ classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
 classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 7 — DISCOVERABILITY + EXPORTS (WHY ORGANIZERS CHOOSE YOU)"]:::muted
+A["DIAGRAM 8 — DISCOVERABILITY + EXPORTS (WHY ORGANIZERS CHOOSE YOU)"]:::muted
 
 subgraph Sources["Signals"]
 SUI["Sui Events<br/>(EventCreated/TicketMinted/Attendance)"]:::muted
@@ -265,6 +325,8 @@ subgraph Product["Product surfaces"]
 API["Express API<br/>/search /feed /export"]:::card
 WEB["Next.js Discovery<br/>trending, categories,<br/>organizer profiles"]:::accent
 ORGEXP["Organizer Exports<br/>CSV/JSON + receipts"]:::card
+USEREXP["User Data Exports<br/>personal attendance history<br/>privacy-preserving (numbers only)"]:::card
+PRIVEXP["Privacy-Preserving Exports<br/>aggregated counts only<br/>no PII / no wallet addresses"]:::accent
 end
 
 Sources --> Q
@@ -275,12 +337,14 @@ WEB --> API
 API --> DB
 API --> C
 API --> ORGEXP
+API --> USEREXP
+ORGEXP --> PRIVEXP
 `,
     },
     {
         id: "scale-reliability",
         title: "Scale + Reliability + Lifecycle + Monetization",
-        description: "A compact \"engineering + business\" view: caching/batching for scale, handling congestion/offline/expiry, blob renewal/archive strategy, and staged monetization (optional fee → Pro → white‑label/managed).",
+        description: "Detailed engineering + business view: minimal on-chain state for cost, caching/batching for throughput, explicit failure handling (connectivity/congestion/expiry), blob lifecycle after Walrus expiry (auto-renew → archive → graceful degradation), and staged monetization from optional fees to enterprise white-label.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -289,31 +353,42 @@ classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 8 — SCALE/RELIABILITY + LIFECYCLE + MONETIZATION (ONE PAGE)"]:::muted
+A["DIAGRAM 9 — SCALE / RELIABILITY / LIFECYCLE / MONETIZATION"]:::muted
 
-subgraph Scale["Scale + cost controls"]
-MIN["Min on-chain state<br/>IDs + refs only"]:::accent
-CACHE["Cache hot reads<br/>Redis + CDN snapshot"]:::card
-BATCH["Batch/index async<br/>Queue + workers"]:::card
+subgraph Scale["Scale + Cost Controls"]
+MIN["Minimal on-chain state<br/>IDs + blob refs only<br/>no rich data on Sui"]:::accent
+CACHE["Cache hot reads<br/>Redis for feeds/counters<br/>CDN for static snapshots"]:::card
+BATCH["Async batch processing<br/>Queue-driven indexer workers<br/>decouple writes from reads"]:::card
 end
 
-subgraph Fail["Failure modes (explicit)"]
-LOW["Low connectivity<br/>scanner queue + retries"]:::card
-CONG["Network congestion<br/>pending-finality UI<br/>idempotent txs"]:::card
-EXPIRE["Blob expiry<br/>renew/re-upload jobs<br/>archive mode"]:::card
+subgraph Fail["Failure Modes (handled explicitly)"]
+LOW["Low connectivity at venue<br/>Scanner queues scans locally<br/>Retries on reconnect"]:::card
+CONG["Network congestion<br/>Pending-finality UI shown<br/>Idempotent tx submission"]:::card
+EXPIRE["Blob expiry on Walrus<br/>Renewal cron jobs run off-chain<br/>Grace period before deletion"]:::card
+end
+
+subgraph BlobLife["Blob Lifecycle (after expiry)"]
+RENEW["Auto-renew<br/>Cron extends storage lease<br/>before expiry deadline"]:::accent
+ARCHIVE["Archive mode<br/>Move to cold storage blob<br/>on-chain ref updated"]:::accent
+DEGRADE["Graceful degradation<br/>Show 'rehydrating' UX<br/>re-upload from backup if needed"]:::card
+ONCHAIN["On-chain refs persist<br/>Sui objects remain intact<br/>only blob needs refresh"]:::card
 end
 
 subgraph Money["Monetization (staged)"]
-V1["V1: optional fee on paid tickets<br/>transparent bps"]:::accent
-V2["V2: Pro mode<br/>analytics/roles/exports"]:::accent
-WL["White-label + managed pilots"]:::accent
+V1["V1: Optional fee on paid tickets<br/>transparent basis points<br/>organizer sees exact cut"]:::accent
+V2["V2: Pro tier<br/>advanced analytics/roles/exports<br/>custom branding + domains"]:::accent
+WL["V3: White-label + managed<br/>enterprise pilots<br/>dedicated support + SLA"]:::accent
 end
 
 MIN --> CACHE
 MIN --> BATCH
 LOW --> BATCH
 CONG --> BATCH
-EXPIRE --> BATCH
+EXPIRE --> RENEW
+EXPIRE --> ARCHIVE
+EXPIRE --> DEGRADE
+RENEW --> ONCHAIN
+ARCHIVE --> ONCHAIN
 
 V1 --> V2
 V2 --> WL
@@ -360,7 +435,7 @@ const additionalDiagrams = [
     {
         id: "roles-access",
         title: "Roles & Access Control (who can call what)",
-        description: "Clarifies on-chain authorization: who can create events, mint tickets, and mark attendance. Distinguishes between Owner checks, Role checks, and Invariants.",
+        description: "Clarifies on-chain authorization: who can create events, apply for tickets, approve applications, and mark attendance. Distinguishes between Owner checks, Role checks, and Invariants, including organizer approval before mint when enabled.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -369,7 +444,7 @@ classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 9 — ROLES & ACCESS CONTROL (ON-CHAIN AUTHZ)"]:::muted
+A["DIAGRAM 11 — ROLES & ACCESS CONTROL (ON-CHAIN AUTHZ)"]:::muted
 
 subgraph Personas["Personas"]
 ORG["Organizer"]:::card
@@ -393,7 +468,8 @@ end
 
 ORG -->|"create_event(blob_id, params)"| EV
 ORG -->|"update_event_site(...)<br/>update_params(...)<br/>set_scanners(...)"| EV
-ATT -->|"mint_ticket(event_id)"| TK
+ATT -->|"apply_ticket(event_id)"| TK
+ORG -->|"approve_application(ticket_id)"| TK
 ATT -->|"transfer_ticket() (if enabled)"| TK
 SCN -->|"mark_attendance(ticket_id)"| ATN
 
@@ -409,17 +485,19 @@ subgraph Notes["Key Rules (say out loud)"]
 N1["Only organizer can mutate event config/site refs"]:::card
 N2["Only authorized scanners can mark attendance"]:::card
 N3["Ticket has checked_in flag → prevents double scans"]:::card
+N4["Organizer approves before ticket is minted<br/>(optional per-event setting)"]:::card
 end
 
 ROLE -.-> N1
 SCAL -.-> N2
 INV -.-> N3
+ROLE -.-> N4
 `,
     },
     {
         id: "payments-escrow",
-        title: "Payments / Refunds / Escrow (MVP vs V2)",
-        description: "Contrasts the MVP usage of direct Coin<SUI> transfers with V2 extensions for escrow vaults, refundable deposits, and programmatic disbursements.",
+        title: "Payment Flow + Refunds + Staking (Full Lifecycle)",
+        description: "Complete payment lifecycle: dual-rail payments (Sui-native + fiat via Stripe), organizer revenue flow, refund mechanisms (policy-based + automatic), and hackathon staking with no-show slashing penalties.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -428,58 +506,64 @@ classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 10 — PAYMENTS, REFUNDS, ESCROW (MVP → V2)"]:::muted
+A["DIAGRAM 12 — PAYMENT FLOW + REFUNDS + STAKING"]:::muted
 
-subgraph Personas["Personas"]
-ORG["Organizer"]:::card
+subgraph Buyer["Attendee / Hacker"]
 ATT["Attendee"]:::card
-JDG["Judges/Admin (V2)"]:::card
 end
 
-subgraph OnChain["Sui On-chain"]
-EV["Event Object<br/>price/capacity/flags"]:::muted
-TK["TicketNFT<br/>ownership + status"]:::muted
-PAY["Payment Flow (MVP)<br/>Coin<SUI> transfer"]:::accent
-VAULT["Escrow Vault (V2)<br/>lock → settle → refund/slash"]:::accent
-REC["Receipt Object (V2)<br/>winners+amounts+hash"]:::muted
+subgraph PayRails["Payment Rails (dual)"]
+SUI_PAY["Sui-native Payment<br/>Coin‹SUI› / USDC on Sui<br/>direct on-chain transfer"]:::accent
+FIAT_PAY["Fiat Payment (V2)<br/>Stripe / Payment Links<br/>off-chain → mint trigger"]:::card
 end
 
-subgraph Offchain["Optional Off-chain (non-trust-critical)"]
-FIAT["Stripe / Fiat (V2)<br/>(optional)"]:::card
-BOOK["Accounting/Exports<br/>(tax reports)"]:::card
+subgraph OnChain["On-chain Settlement"]
+EV["Event Object<br/>price + capacity + policy"]:::muted
+TK["Ticket NFT minted<br/>on successful payment"]:::muted
+VAULT["Escrow Vault<br/>holds funds until conditions met"]:::accent
+ORGWALLET["Organizer Wallet<br/>receives revenue"]:::card
 end
 
-ATT -->|"buy ticket"| PAY
-PAY -->|"transfer to organizer<br/>(or event vault if chosen)"| ORG
-PAY --> TK
-PAY --> EV
-
-subgraph MVP["MVP Commitment"]
-M1["MVP: Sui-native paid tickets<br/>(simple, low risk)"]:::card
-M2["Refunds (if needed):<br/>organizer-controlled policy + tx"]:::card
-end
-PAY -.-> M1
-PAY -.-> M2
-
-subgraph V2["V2 Extensions"]
-V1["Escrowed prize pools<br/>+ programmatic disbursement"]:::card
-V2B["Refundable deposits / no-show penalties<br/>(optional)"]:::card
+subgraph Refunds["Refund Mechanisms"]
+AUTOREF["Auto-refund<br/>event cancelled → full refund<br/>triggered by organizer or deadline"]:::card
+POLICYREF["Policy-based refund<br/>before cutoff: full refund<br/>after cutoff: partial/none"]:::card
+ORGREF["Organizer-initiated refund<br/>manual refund via dashboard"]:::card
 end
 
-ORG -->|"lock funds (optional)"| VAULT
-JDG -->|"finalize results"| REC
-REC -->|"settle payouts"| VAULT
-VAULT -->|"payout / refund / slash"| ORG
-VAULT -->|"payout / refund"| ATT
+subgraph Staking["Hackathon Staking (V2)"]
+STAKE["Participant stakes deposit<br/>locked in escrow on registration"]:::accent
+ATTEND["Attended + submitted?<br/>checked via Attendance NFT"]:::accent
+RETURN["Stake returned<br/>full amount back to hacker"]:::accent
+SLASH["No-show slashing<br/>stake forfeited to prize pool<br/>or redistributed to attendees"]:::danger
+end
 
-FIAT -. "optional rail" .-> PAY
-BOOK -. "reports" .-> ORG
+ATT -->|"choose payment method"| SUI_PAY
+ATT -->|"choose payment method"| FIAT_PAY
+SUI_PAY -->|"Coin transfer"| VAULT
+FIAT_PAY -->|"webhook confirms"| VAULT
+VAULT -->|"mint ticket"| TK
+VAULT -->|"after event / settlement"| ORGWALLET
+TK --> EV
+
+VAULT --> AUTOREF
+VAULT --> POLICYREF
+VAULT --> ORGREF
+AUTOREF -->|"refund to"| ATT
+POLICYREF -->|"refund to"| ATT
+ORGREF -->|"refund to"| ATT
+
+ATT -->|"stake deposit"| STAKE
+STAKE --> VAULT
+ATTEND -->|"yes"| RETURN
+ATTEND -->|"no"| SLASH
+RETURN -->|"return to"| ATT
+SLASH -->|"to prize pool"| VAULT
 `,
     },
     {
         id: "walrus-sites-gating",
         title: "Walrus Sites + Token‑Gating via Seal",
-        description: "Demonstrates how public Walrus Sites (HTML/JS) interact with encrypted blobs. The site itself has no secrets; gating is enforcing by Seal decrypting blobs only for valid ticket owners.",
+        description: "Shows exactly what content lives in Walrus Sites (public event shell: branding, agenda, speakers, sponsors) vs encrypted blobs (private: venue address, QR codes, access links, VIP content). The site itself has no secrets; gating is enforced by Seal decrypting blobs only for valid ticket owners.",
         mermaidCode: `
 %%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
 flowchart TB
@@ -488,15 +572,15 @@ classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
 classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
 classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 
-A["DIAGRAM 11 — WALRUS SITE + TOKEN-GATED CONTENT (SEAL DECRYPT CLIENT-SIDE)"]:::muted
+A["DIAGRAM 13 — WALRUS SITE + TOKEN-GATED CONTENT (SEAL DECRYPT CLIENT-SIDE)"]:::muted
 
 subgraph Public["Public (Walrus Site)"]
-SITE["Walrus Site<br/>index.html / css / js<br/>(public)"]:::muted
-PUBB["Public blobs<br/>agenda/speakers/media refs"]:::card
+SITE["Walrus Site Contents<br/>- index.html / app shell<br/>- event branding + CSS<br/>- speaker bios + photos<br/>- agenda / schedule<br/>- sponsor logos + links<br/>- venue map + directions<br/>(all public, no secrets)"]:::muted
+PUBB["Public Blobs<br/>- high-res event media<br/>- presentation slides<br/>- recording links (post-event)<br/>- sponsor materials"]:::card
 end
 
 subgraph Gated["Gated (Encrypted blobs)"]
-ENC["Encrypted blob<br/>location/QR/access link<br/>(or private agenda)"]:::accent
+ENC["Encrypted Blobs (Seal)<br/>- exact venue address + location pin<br/>- QR code for entry<br/>- access links (Zoom/Discord)<br/>- private agenda (VIP tracks)<br/>- networking contact cards"]:::accent
 end
 
 subgraph Client["Client"]
@@ -545,8 +629,8 @@ export default function TechnicalPage() {
     // Combine all sections for navigation purposes
     const navItems = [
         ...architectureDiagrams.map((d, i) => ({ ...d, index: i + 1 })),
-        { id: "design-decisions", title: "Design Decisions", description: "Explicit assumptions & decision variables", isSection: true },
-        ...additionalDiagrams.map((d, i) => ({ ...d, index: i + 9 }))
+        { id: "design-decisions", title: "Design Decisions", description: "Explicit assumptions & decision variables", isSection: true, index: 10 },
+        ...additionalDiagrams.map((d, i) => ({ ...d, index: i + 11 }))
     ];
 
     // Scroll detection for sticky sidebar
@@ -793,7 +877,7 @@ export default function TechnicalPage() {
                         <div className="mb-8">
                             <div className="flex items-center gap-4 mb-4">
                                 <span className="text-primary font-mono text-lg font-bold bg-primary/10 px-4 py-2 rounded-lg border border-primary/20">
-                                    §
+                                    10
                                 </span>
                                 <h2 className="text-3xl md:text-4xl font-bold text-white">
                                     Design Decisions
@@ -841,7 +925,7 @@ export default function TechnicalPage() {
                             <div className="mb-8">
                                 <div className="flex items-center gap-4 mb-4">
                                     <span className="text-primary font-mono text-lg font-bold bg-primary/10 px-4 py-2 rounded-lg border border-primary/20">
-                                        {String(index + 9).padStart(2, "0")}
+                                        {String(index + 11).padStart(2, "0")}
                                     </span>
                                     <h2 className="text-3xl md:text-4xl font-bold text-white">
                                         {diagram.title}
@@ -874,7 +958,9 @@ export default function TechnicalPage() {
             </div>
 
             {/* Use same footer as homepage */}
-            <ClosingNextStepsQuestionsSection />
+            <div className={`transition-all duration-300 ${isSticky ? "ml-64" : ""}`}>
+                <ClosingNextStepsQuestionsSection />
+            </div>
 
             {/* Fullscreen Viewer */}
             <MermaidFullscreenViewer
