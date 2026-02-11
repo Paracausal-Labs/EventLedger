@@ -166,11 +166,10 @@ export function MermaidFullscreenViewer({
                             transition: isDragging ? "none" : "transform 0.1s ease-out",
                         }}
                     >
-                        {/* Clone the diagram element */}
                         <div
                             className="bg-background/50 border border-border rounded-xl p-8 backdrop-blur-sm"
                             dangerouslySetInnerHTML={{
-                                __html: document.getElementById(diagramId)?.innerHTML || "",
+                                __html: document.getElementById(diagramId)?.querySelector(".mermaid-container")?.innerHTML || "",
                             }}
                         />
                     </motion.div>

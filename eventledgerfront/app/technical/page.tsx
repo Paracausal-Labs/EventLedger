@@ -516,7 +516,7 @@ export default function TechnicalPage() {
             </AnimatePresence>
 
             {/* Main Content */}
-            <div className={`container mx-auto px-6 py-20 transition-all duration-300 ${isSticky ? "lg:ml-64" : ""}`}>
+            <div className={`max-w-6xl mx-auto px-6 py-20 transition-all duration-300 ${isSticky ? "ml-72" : ""}`}>
                 <div className="space-y-20">
                     {architectureDiagrams.map((diagram, index) => (
                         <motion.section
