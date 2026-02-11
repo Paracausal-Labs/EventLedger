@@ -114,7 +114,7 @@ export function MVPEvolutionSection() {
     }, { scope: containerRef, dependencies: [isPresenterMode] })
 
     return (
-        <section ref={containerRef} className="relative flex min-h-screen w-full flex-col items-center justify-center bg-[#0B0F12] py-24 overflow-hidden">
+        <section ref={containerRef} id="mvp" className="relative flex min-h-screen w-full flex-col items-center justify-center bg-[#0B0F12] py-24 overflow-hidden">
 
             {/* Status Header */}
             <div className="absolute top-12 left-0 w-full text-center z-10">

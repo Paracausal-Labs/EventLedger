@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
+import { useRouter, usePathname } from "next/navigation"
+import { FileCode2 } from "lucide-react"
 const SECTIONS = [
     { id: "hero", label: "Intro", time: "0-2m" },
     { id: "problem", label: "Problem", time: "2-5m" },
@@ -22,6 +24,8 @@ const SECTIONS = [
 ]
 
 export function PitchControls() {
+    const router = useRouter()
+    const pathname = usePathname()
     const { isPresenterMode, togglePresenterMode } = usePresenterStore()
     const activeId = useScrollSpy(SECTIONS.map((s) => s.id), 100)
 
@@ -88,6 +92,18 @@ export function PitchControls() {
                                 {key}
                             </Button>
                         ))}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                                "text-xs gap-1.5",
+                                pathname === "/technical" ? "text-primary bg-primary/10" : "text-muted-foreground"
+                            )}
+                            onClick={() => router.push("/technical")}
+                        >
+                            <FileCode2 className="w-3 h-3" />
+                            Technical
+                        </Button>
                     </div>
 
                     <div className="flex items-center gap-2 border-l border-white/10 pl-4">

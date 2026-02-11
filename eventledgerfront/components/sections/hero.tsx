@@ -98,18 +98,12 @@ export function Hero() {
                         <Button
                             size={isPresenterMode ? "lg" : "default"}
                             className={cn("gap-2", isPresenterMode && "h-14 px-8 text-lg")}
-                            onClick={() => scrollToSection("mvp")}
+                            asChild
                         >
-                            See MVP in 90 seconds
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size={isPresenterMode ? "lg" : "default"}
-                            className={cn(isPresenterMode && "h-14 px-8 text-lg")}
-                            onClick={() => scrollToSection("architecture")}
-                        >
-                            View Architecture
+                            <a href="/technical">
+                                View Technical Architecture
+                                <ArrowRight className="h-4 w-4" />
+                            </a>
                         </Button>
                     </div>
                 </motion.div>
