@@ -747,15 +747,12 @@ export default function TechnicalPage() {
                             <button
                                 key={item.id}
                                 onClick={() => scrollToSection(item.id)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-primary/10 hover:text-primary transition-colors group border border-transparent hover:border-primary/30 ${(item as any).isSection ? "col-span-full md:col-span-2 lg:col-span-3 xl:col-span-4 bg-primary/5 border-primary/10" : ""
-                                    }`}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-primary/10 hover:text-primary transition-colors group border border-transparent hover:border-primary/30"
                             >
-                                <span className={`font-mono text-xs transition-colors ${(item as any).isSection ? "text-primary font-bold uppercase" : "text-primary/60 group-hover:text-primary"
-                                    }`}>
+                                <span className="font-mono text-xs text-primary/60 group-hover:text-primary transition-colors">
                                     {(item as any).index ? String((item as any).index).padStart(2, "0") : "§"}
                                 </span>
-                                <span className={`text-muted-foreground group-hover:text-primary transition-colors truncate text-xs ${(item as any).isSection ? "font-bold text-primary" : ""
-                                    }`}>
+                                <span className="text-muted-foreground group-hover:text-primary transition-colors truncate text-xs">
                                     {item.title}
                                 </span>
                             </button>
