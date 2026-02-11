@@ -8,7 +8,7 @@ import * as THREE from "three"
 // --- 3D WALRUS COMPONENT ---
 
 function FloatingWalrusContent() {
-    const texture = useLoader(THREE.TextureLoader, "/phone.jpeg")
+    const texture = useLoader(THREE.TextureLoader, "/walrustransparent.png")
     const walrusRef = useRef<THREE.Mesh>(null)
     const ringsRef = useRef<THREE.Group>(null)
 
@@ -28,14 +28,17 @@ function FloatingWalrusContent() {
         }
     })
 
-    const width = 6 * (texture.image.width / texture.image.height)
+    // Calculate aspect ratio from the loaded texture
+    const aspectRatio = texture.image.width / texture.image.height
+    const height = 5
+    const width = height * aspectRatio
 
     return (
-        <group scale={0.55}>
+        <group scale={0.65}>
             {/* Central Walrus Image */}
             <mesh ref={walrusRef} rotation={[0, 0, 0]}>
-                <planeGeometry args={[width, 6]} />
-                <meshBasicMaterial map={texture} transparent opacity={0.9} side={THREE.DoubleSide} />
+                <planeGeometry args={[width, height]} />
+                <meshBasicMaterial map={texture} transparent opacity={0.95} side={THREE.DoubleSide} />
             </mesh>
 
             {/* Tech Halo / Orbital Rings */}
@@ -64,6 +67,13 @@ function Scene() {
     return (
         <>
             <ambientLight intensity={1.5} />
+            {/* Blue glow light behind walrus */}
+            <pointLight position={[0, 0, -2]} intensity={2} color="#06b6d4" distance={10} decay={2} />
+            {/* Glowing sphere for visual glow effect */}
+            <mesh position={[0, 0, -2]}>
+                <sphereGeometry args={[2, 32, 32]} />
+                <meshBasicMaterial color="#06b6d4" transparent opacity={0.15} />
+            </mesh>
             <FloatingWalrusContent />
         </>
     )
