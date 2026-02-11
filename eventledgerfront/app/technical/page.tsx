@@ -321,6 +321,216 @@ V2 --> WL
     },
 ];
 
+const designDecisions = [
+    {
+        title: "Source of truth vs acceleration",
+        content: "Truth: Sui objects + Walrus blob IDs (+ Seal policies). Acceleration only: Postgres/Indexer/Cache for search, feeds, exports. Fully rebuildable from chain events + Walrus metadata."
+    },
+    {
+        title: "Scanner authorization (MVP decision)",
+        content: "MVP: scanner allowlist per event (organizer sets staff addresses). V2 option: scanner capability object for stronger auth + revocation semantics."
+    },
+    {
+        title: "Check-in mode (venue connectivity)",
+        content: "Strict mode: only allow entry after on-chain confirmation. Friendly mode: allow “soft entry” + offline queue + sync later (still prevents double-mint via on-chain checked_in flag)."
+    },
+    {
+        title: "Ticket transferability (product policy)",
+        content: "Option A (default): transferable tickets (Seal decrypt follows current owner). Option B: non-transferable / soulbound tickets for certain events."
+    },
+    {
+        title: "Blob retention / expiry policy (Walrus reality)",
+        content: "Retention is explicit per event (e.g., “keep site 6 months, archive metadata 2 years”). Renewal jobs run off-chain; degrade UX gracefully if a blob expires (“rehydrating”)."
+    },
+    {
+        title: "Payment model scope (be honest)",
+        content: "MVP: Sui-native paid tickets (simple). V2: escrow/prizes + deposits/no-show penalties + multi-rail settlement if demanded."
+    },
+    {
+        title: "Privacy boundaries (what we never touch)",
+        content: "Ticket payload plaintext (location/QR/access link) is never visible to our backend. Analytics are product-level (funnels) and organizer reports can be aggregated/anonymized."
+    },
+    {
+        title: "Idempotency / safety guarantees",
+        content: "Check-in is single-use enforced on-chain (checked_in_at / is_used). Clients are retry-safe: pending-finality UI + do-not-resubmit-if-tx-hash-known."
+    }
+];
+
+const additionalDiagrams = [
+    {
+        id: "roles-access",
+        title: "Roles & Access Control (who can call what)",
+        description: "Clarifies on-chain authorization: who can create events, mint tickets, and mark attendance. Distinguishes between Owner checks, Role checks, and Invariants.",
+        mermaidCode: `
+%%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
+flowchart TB
+classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
+classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
+classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
+classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
+
+A["DIAGRAM 9 — ROLES & ACCESS CONTROL (ON-CHAIN AUTHZ)"]:::muted
+
+subgraph Personas["Personas"]
+ORG["Organizer"]:::card
+ATT["Attendee"]:::card
+SCN["Scanner/Staff"]:::card
+end
+
+subgraph Contracts["Sui Move Modules"]
+EV["EventRegistry\\n(create/update/cancel)\\n+ scanner registry"]:::muted
+TK["TicketNFT\\n(mint/transfer/set_blob/status)"]:::muted
+ATN["AttendanceNFT\\n(mark_attendance)"]:::muted
+end
+
+subgraph Auth["Auth Mechanisms"]
+OWN["Owner checks\\n(owner == signer)"]:::accent
+ROLE["Organizer checks\\n(event.organizer == signer)"]:::accent
+SCAL["Scanner allowlist (MVP)\\n(scanner_addr ∈ event.scanners)"]:::accent
+CAP["Scanner capability (V2)\\n(EventScannerCap)"]:::accent
+INV["Invariants\\n(capacity, double-scan, replay)"]:::accent
+end
+
+ORG -->|"create_event(blob_id, params)"| EV
+ORG -->|"update_event_site(...)\\nupdate_params(...)\\nset_scanners(...)"| EV
+ATT -->|"mint_ticket(event_id)"| TK
+ATT -->|"transfer_ticket() (if enabled)"| TK
+SCN -->|"mark_attendance(ticket_id)"| ATN
+
+EV --> ROLE
+TK --> OWN
+ATN --> SCAL
+ATN --> CAP
+EV --> INV
+TK --> INV
+ATN --> INV
+
+subgraph Notes["Key Rules (say out loud)"]
+N1["Only organizer can mutate event config/site refs"]:::card
+N2["Only authorized scanners can mark attendance"]:::card
+N3["Ticket has checked_in flag → prevents double scans"]:::card
+end
+
+ROLE -.-> N1
+SCAL -.-> N2
+INV -.-> N3
+`,
+    },
+    {
+        id: "payments-escrow",
+        title: "Payments / Refunds / Escrow (MVP vs V2)",
+        description: "Contrasts the MVP usage of direct Coin<SUI> transfers with V2 extensions for escrow vaults, refundable deposits, and programmatic disbursements.",
+        mermaidCode: `
+%%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
+flowchart TB
+classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
+classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
+classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
+classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
+
+A["DIAGRAM 10 — PAYMENTS, REFUNDS, ESCROW (MVP → V2)"]:::muted
+
+subgraph Personas["Personas"]
+ORG["Organizer"]:::card
+ATT["Attendee"]:::card
+JDG["Judges/Admin (V2)"]:::card
+end
+
+subgraph OnChain["Sui On-chain"]
+EV["Event Object\\nprice/capacity/flags"]:::muted
+TK["TicketNFT\\nownership + status"]:::muted
+PAY["Payment Flow (MVP)\\nCoin<SUI> transfer"]:::accent
+VAULT["Escrow Vault (V2)\\nlock → settle → refund/slash"]:::accent
+REC["Receipt Object (V2)\\nwinners+amounts+hash"]:::muted
+end
+
+subgraph Offchain["Optional Off-chain (non-trust-critical)"]
+FIAT["Stripe / Fiat (V2)\\n(optional)"]:::card
+BOOK["Accounting/Exports\\n(tax reports)"]:::card
+end
+
+ATT -->|"buy ticket"| PAY
+PAY -->|"transfer to organizer\\n(or event vault if chosen)"| ORG
+PAY --> TK
+PAY --> EV
+
+subgraph MVP["MVP Commitment"]
+M1["MVP: Sui-native paid tickets\\n(simple, low risk)"]:::card
+M2["Refunds (if needed):\\norganizer-controlled policy + tx"]:::card
+end
+PAY -.-> M1
+PAY -.-> M2
+
+subgraph V2["V2 Extensions"]
+V1["Escrowed prize pools\\n+ programmatic disbursement"]:::card
+V2B["Refundable deposits / no-show penalties\\n(optional)"]:::card
+end
+
+ORG -->|"lock funds (optional)"| VAULT
+JDG -->|"finalize results"| REC
+REC -->|"settle payouts"| VAULT
+VAULT -->|"payout / refund / slash"| ORG
+VAULT -->|"payout / refund"| ATT
+
+FIAT -. "optional rail" .-> PAY
+BOOK -. "reports" .-> ORG
+`,
+    },
+    {
+        id: "walrus-sites-gating",
+        title: "Walrus Sites + Token‑Gating via Seal",
+        description: "Demonstrates how public Walrus Sites (HTML/JS) interact with encrypted blobs. The site itself has no secrets; gating is enforcing by Seal decrypting blobs only for valid ticket owners.",
+        mermaidCode: `
+%%{init: {"theme":"base","themeVariables":{"background":"#0A0A0A","primaryColor":"#171717","secondaryColor":"#262626","primaryTextColor":"#FFFFFF","secondaryTextColor":"#A3A3A3","lineColor":"#333333","fontFamily":"Inter, ui-sans-serif, system-ui"}}}%%
+flowchart TB
+classDef card fill:#171717,stroke:#333333,color:#FFFFFF,stroke-width:1px;
+classDef muted fill:#262626,stroke:#333333,color:#A3A3A3,stroke-width:1px;
+classDef accent fill:#171717,stroke:#06b6d4,color:#FFFFFF,stroke-width:2px;
+classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
+
+A["DIAGRAM 11 — WALRUS SITE + TOKEN-GATED CONTENT (SEAL DECRYPT CLIENT-SIDE)"]:::muted
+
+subgraph Public["Public (Walrus Site)"]
+SITE["Walrus Site\\nindex.html / css / js\\n(public)"]:::muted
+PUBB["Public blobs\\nagenda/speakers/media refs"]:::card
+end
+
+subgraph Gated["Gated (Encrypted blobs)"]
+ENC["Encrypted blob\\nlocation/QR/access link\\n(or private agenda)"]:::accent
+end
+
+subgraph Client["Client"]
+BROW["Browser (Next.js)\\nstatic page + wallet UX"]:::accent
+WALLET["Wallet / zkLogin\\nSui address"]:::muted
+end
+
+subgraph Policy["Policy + Truth"]
+SUI["Sui: TicketNFT ownership\\n(source of truth)"]:::muted
+SEAL["Seal SDK + key servers\\npolicy check → decrypt shares"]:::accent
+end
+
+SITE --> BROW
+PUBB --> BROW
+BROW -->|"connect"| WALLET
+BROW -->|"check owns ticket?"| SUI
+
+SUI -->|"owns ticket"| BROW
+BROW -->|"fetch encrypted blob"| ENC
+ENC --> SEAL
+SEAL -->|"verify policy vs Sui"| SUI
+SEAL -->|"decrypt OK"| BROW
+
+SUI -->|"does not own"| BROW
+BROW -->|"show CTA:\\nBuy ticket / Register"| SITE
+
+subgraph Rule["Hard Rule"]
+R1["No secrets in site files.\\nGating is Seal-encrypted blobs + on-chain checks."]:::card
+end
+SITE -.-> R1
+`,
+    }
+];
+
 export default function TechnicalPage() {
     const router = useRouter();
     const [fullscreenDiagram, setFullscreenDiagram] = useState<{
@@ -332,6 +542,13 @@ export default function TechnicalPage() {
     const indexRef = useRef<HTMLDivElement>(null);
     const [activeSection, setActiveSection] = useState<string>("");
 
+    // Combine all sections for navigation purposes
+    const navItems = [
+        ...architectureDiagrams.map((d, i) => ({ ...d, index: i + 1 })),
+        { id: "design-decisions", title: "Design Decisions", description: "Explicit assumptions & decision variables", isSection: true },
+        ...additionalDiagrams.map((d, i) => ({ ...d, index: i + 9 }))
+    ];
+
     // Scroll detection for sticky sidebar
     useEffect(() => {
         const handleScroll = () => {
@@ -341,7 +558,7 @@ export default function TechnicalPage() {
             }
 
             // Detect active section
-            const sections = architectureDiagrams.map(d => document.getElementById(d.id));
+            const sections = navItems.map(d => document.getElementById(d.id));
             const currentSection = sections.find(section => {
                 if (section) {
                     const rect = section.getBoundingClientRect();
@@ -401,7 +618,7 @@ export default function TechnicalPage() {
                     className="absolute inset-0 opacity-20"
                     style={{
                         backgroundImage: `linear-gradient(to right, #333 1px, transparent 1px),
-                             linear-gradient(to bottom, #333 1px, transparent 1px)`,
+                                linear-gradient(to bottom, #333 1px, transparent 1px)`,
                         backgroundSize: "40px 40px",
                     }}
                 />
@@ -442,17 +659,20 @@ export default function TechnicalPage() {
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 text-sm">
-                        {architectureDiagrams.map((diagram, index) => (
+                        {navItems.map((item, index) => (
                             <button
-                                key={diagram.id}
-                                onClick={() => scrollToSection(diagram.id)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-primary/10 hover:text-primary transition-colors group border border-transparent hover:border-primary/30"
+                                key={item.id}
+                                onClick={() => scrollToSection(item.id)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-primary/10 hover:text-primary transition-colors group border border-transparent hover:border-primary/30 ${(item as any).isSection ? "col-span-full md:col-span-2 lg:col-span-3 xl:col-span-4 bg-primary/5 border-primary/10" : ""
+                                    }`}
                             >
-                                <span className="text-primary/60 font-mono text-xs group-hover:text-primary transition-colors">
-                                    {String(index + 1).padStart(2, "0")}
+                                <span className={`font-mono text-xs transition-colors ${(item as any).isSection ? "text-primary font-bold uppercase" : "text-primary/60 group-hover:text-primary"
+                                    }`}>
+                                    {(item as any).index ? String((item as any).index).padStart(2, "0") : "§"}
                                 </span>
-                                <span className="text-muted-foreground group-hover:text-primary transition-colors truncate text-xs">
-                                    {diagram.title}
+                                <span className={`text-muted-foreground group-hover:text-primary transition-colors truncate text-xs ${(item as any).isSection ? "font-bold text-primary" : ""
+                                    }`}>
+                                    {item.title}
                                 </span>
                             </button>
                         ))}
@@ -482,30 +702,30 @@ export default function TechnicalPage() {
                                 </h3>
                             </div>
                             <div className="space-y-1">
-                                {architectureDiagrams.map((diagram, index) => (
+                                {navItems.map((item, index) => (
                                     <button
-                                        key={diagram.id}
-                                        onClick={() => scrollToSection(diagram.id)}
-                                        className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-all group border ${activeSection === diagram.id
+                                        key={item.id}
+                                        onClick={() => scrollToSection(item.id)}
+                                        className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-all group border ${activeSection === item.id
                                             ? "bg-primary/20 border-primary/50 text-primary"
                                             : "border-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                                             }`}
                                     >
                                         <span
-                                            className={`font-mono text-xs font-bold mt-0.5 shrink-0 ${activeSection === diagram.id
+                                            className={`font-mono text-xs font-bold mt-0.5 shrink-0 ${activeSection === item.id
                                                 ? "text-primary"
                                                 : "text-primary/60 group-hover:text-primary"
                                                 }`}
                                         >
-                                            {String(index + 1).padStart(2, "0")}
+                                            {(item as any).index ? String((item as any).index).padStart(2, "0") : "§"}
                                         </span>
                                         <span
-                                            className={`text-xs leading-relaxed ${activeSection === diagram.id
+                                            className={`text-xs leading-relaxed ${activeSection === item.id
                                                 ? "text-primary font-medium"
                                                 : "text-muted-foreground group-hover:text-primary"
                                                 }`}
                                         >
-                                            {diagram.title}
+                                            {item.title}
                                         </span>
                                     </button>
                                 ))}
@@ -518,6 +738,7 @@ export default function TechnicalPage() {
             {/* Main Content */}
             <div className={`container mx-auto px-6 py-20 transition-all duration-300 ${isSticky ? "lg:ml-64" : ""}`}>
                 <div className="space-y-20">
+                    {/* Existing 8 Diagrams */}
                     {architectureDiagrams.map((diagram, index) => (
                         <motion.section
                             key={diagram.id}
@@ -528,7 +749,6 @@ export default function TechnicalPage() {
                             transition={{ duration: 0.5, delay: index * 0.05 }}
                             className="bg-card/50 border border-border rounded-2xl p-8 md:p-12 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all"
                         >
-                            {/* Diagram Header */}
                             <div className="mb-8">
                                 <div className="flex items-center gap-4 mb-4">
                                     <span className="text-primary font-mono text-lg font-bold bg-primary/10 px-4 py-2 rounded-lg border border-primary/20">
@@ -543,15 +763,101 @@ export default function TechnicalPage() {
                                 </p>
                             </div>
 
-                            {/* Diagram Container */}
                             <div className="relative bg-background/80 border border-border rounded-xl p-8 overflow-x-auto backdrop-blur-sm">
                                 <MermaidDiagram
                                     chart={diagram.mermaidCode}
                                     id={diagram.id}
                                     className="flex justify-center items-center min-h-[300px]"
                                 />
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    onClick={() => setFullscreenDiagram({ id: diagram.id, title: diagram.title })}
+                                    className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm hover:bg-primary/20 hover:text-primary border border-border shadow-lg transition-all"
+                                    title="View Fullscreen"
+                                >
+                                    <Maximize2 className="w-5 h-5" />
+                                </Button>
+                            </div>
+                        </motion.section>
+                    ))}
 
-                                {/* Fullscreen Button */}
+                    {/* Design Decisions Section (New) */}
+                    <motion.section
+                        id="design-decisions"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="bg-primary/5 border border-primary/20 rounded-2xl p-8 md:p-12"
+                    >
+                        <div className="mb-8">
+                            <div className="flex items-center gap-4 mb-4">
+                                <span className="text-primary font-mono text-lg font-bold bg-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                                    §
+                                </span>
+                                <h2 className="text-3xl md:text-4xl font-bold text-white">
+                                    Design Decisions
+                                </h2>
+                            </div>
+                            <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
+                                Explicit assumptions & decision variables (to align early)
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {designDecisions.map((decision, i) => (
+                                <div key={i} className="bg-card/40 border border-border/50 rounded-xl p-6 hover:border-primary/40 hover:bg-card/60 transition-all">
+                                    <h3 className="text-primary font-bold mb-2 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                        {decision.title}
+                                    </h3>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">
+                                        {decision.content}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.section>
+
+                    {/* Additional Diagrams Section Header */}
+                    <div className="pt-8 pb-4 border-t border-border">
+                        <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+                            <div className="w-1 h-8 bg-primary rounded-full" />
+                            Additional Diagrams
+                        </h2>
+                    </div>
+
+                    {/* Additional Diagrams (9-11) */}
+                    {additionalDiagrams.map((diagram, index) => (
+                        <motion.section
+                            key={diagram.id}
+                            id={diagram.id}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.5, delay: index * 0.05 }}
+                            className="bg-card/50 border border-border rounded-2xl p-8 md:p-12 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all"
+                        >
+                            <div className="mb-8">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="text-primary font-mono text-lg font-bold bg-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                                        {String(index + 9).padStart(2, "0")}
+                                    </span>
+                                    <h2 className="text-3xl md:text-4xl font-bold text-white">
+                                        {diagram.title}
+                                    </h2>
+                                </div>
+                                <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
+                                    {diagram.description}
+                                </p>
+                            </div>
+
+                            <div className="relative bg-background/80 border border-border rounded-xl p-8 overflow-x-auto backdrop-blur-sm">
+                                <MermaidDiagram
+                                    chart={diagram.mermaidCode}
+                                    id={diagram.id}
+                                    className="flex justify-center items-center min-h-[300px]"
+                                />
                                 <Button
                                     variant="secondary"
                                     size="icon"
