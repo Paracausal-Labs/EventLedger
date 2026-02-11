@@ -874,7 +874,9 @@ export default function TechnicalPage() {
             </div>
 
             {/* Use same footer as homepage */}
-            <ClosingNextStepsQuestionsSection />
+            <div className={`transition-all duration-300 ${isSticky ? "ml-64" : ""}`}>
+                <ClosingNextStepsQuestionsSection />
+            </div>
 
             {/* Fullscreen Viewer */}
             <MermaidFullscreenViewer

@@ -33,11 +33,11 @@ export function MermaidFullscreenViewer({
     }, [isOpen]);
 
     const handleZoomIn = () => {
-        setZoom((prev) => Math.min(prev + 0.25, 3));
+        setZoom((prev) => Math.min(prev + 0.25, 5));
     };
 
     const handleZoomOut = () => {
-        setZoom((prev) => Math.max(prev - 0.25, 0.5));
+        setZoom((prev) => Math.max(prev - 0.25, 0.25));
     };
 
     const handleReset = () => {
@@ -68,7 +68,7 @@ export function MermaidFullscreenViewer({
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setZoom((prev) => Math.max(0.5, Math.min(3, prev + delta)));
+        setZoom((prev) => Math.max(0.25, Math.min(5, prev + delta)));
     };
 
     if (!isOpen) return null;
