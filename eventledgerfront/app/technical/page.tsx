@@ -378,21 +378,21 @@ SCN["Scanner/Staff"]:::card
 end
 
 subgraph Contracts["Sui Move Modules"]
-EV["EventRegistry\\n(create/update/cancel)\\n+ scanner registry"]:::muted
-TK["TicketNFT\\n(mint/transfer/set_blob/status)"]:::muted
-ATN["AttendanceNFT\\n(mark_attendance)"]:::muted
+EV["EventRegistry<br/>(create/update/cancel)<br/>+ scanner registry"]:::muted
+TK["TicketNFT<br/>(mint/transfer/set_blob/status)"]:::muted
+ATN["AttendanceNFT<br/>(mark_attendance)"]:::muted
 end
 
 subgraph Auth["Auth Mechanisms"]
-OWN["Owner checks\\n(owner == signer)"]:::accent
-ROLE["Organizer checks\\n(event.organizer == signer)"]:::accent
-SCAL["Scanner allowlist (MVP)\\n(scanner_addr ∈ event.scanners)"]:::accent
-CAP["Scanner capability (V2)\\n(EventScannerCap)"]:::accent
-INV["Invariants\\n(capacity, double-scan, replay)"]:::accent
+OWN["Owner checks<br/>(owner == signer)"]:::accent
+ROLE["Organizer checks<br/>(event.organizer == signer)"]:::accent
+SCAL["Scanner allowlist (MVP)<br/>(scanner_addr ∈ event.scanners)"]:::accent
+CAP["Scanner capability (V2)<br/>(EventScannerCap)"]:::accent
+INV["Invariants<br/>(capacity, double-scan, replay)"]:::accent
 end
 
 ORG -->|"create_event(blob_id, params)"| EV
-ORG -->|"update_event_site(...)\\nupdate_params(...)\\nset_scanners(...)"| EV
+ORG -->|"update_event_site(...)<br/>update_params(...)<br/>set_scanners(...)"| EV
 ATT -->|"mint_ticket(event_id)"| TK
 ATT -->|"transfer_ticket() (if enabled)"| TK
 SCN -->|"mark_attendance(ticket_id)"| ATN
@@ -437,33 +437,33 @@ JDG["Judges/Admin (V2)"]:::card
 end
 
 subgraph OnChain["Sui On-chain"]
-EV["Event Object\\nprice/capacity/flags"]:::muted
-TK["TicketNFT\\nownership + status"]:::muted
-PAY["Payment Flow (MVP)\\nCoin<SUI> transfer"]:::accent
-VAULT["Escrow Vault (V2)\\nlock → settle → refund/slash"]:::accent
-REC["Receipt Object (V2)\\nwinners+amounts+hash"]:::muted
+EV["Event Object<br/>price/capacity/flags"]:::muted
+TK["TicketNFT<br/>ownership + status"]:::muted
+PAY["Payment Flow (MVP)<br/>Coin<SUI> transfer"]:::accent
+VAULT["Escrow Vault (V2)<br/>lock → settle → refund/slash"]:::accent
+REC["Receipt Object (V2)<br/>winners+amounts+hash"]:::muted
 end
 
 subgraph Offchain["Optional Off-chain (non-trust-critical)"]
-FIAT["Stripe / Fiat (V2)\\n(optional)"]:::card
-BOOK["Accounting/Exports\\n(tax reports)"]:::card
+FIAT["Stripe / Fiat (V2)<br/>(optional)"]:::card
+BOOK["Accounting/Exports<br/>(tax reports)"]:::card
 end
 
 ATT -->|"buy ticket"| PAY
-PAY -->|"transfer to organizer\\n(or event vault if chosen)"| ORG
+PAY -->|"transfer to organizer<br/>(or event vault if chosen)"| ORG
 PAY --> TK
 PAY --> EV
 
 subgraph MVP["MVP Commitment"]
-M1["MVP: Sui-native paid tickets\\n(simple, low risk)"]:::card
-M2["Refunds (if needed):\\norganizer-controlled policy + tx"]:::card
+M1["MVP: Sui-native paid tickets<br/>(simple, low risk)"]:::card
+M2["Refunds (if needed):<br/>organizer-controlled policy + tx"]:::card
 end
 PAY -.-> M1
 PAY -.-> M2
 
 subgraph V2["V2 Extensions"]
-V1["Escrowed prize pools\\n+ programmatic disbursement"]:::card
-V2B["Refundable deposits / no-show penalties\\n(optional)"]:::card
+V1["Escrowed prize pools<br/>+ programmatic disbursement"]:::card
+V2B["Refundable deposits / no-show penalties<br/>(optional)"]:::card
 end
 
 ORG -->|"lock funds (optional)"| VAULT
@@ -491,22 +491,22 @@ classDef danger fill:#171717,stroke:#ef4444,color:#FFFFFF,stroke-width:2px;
 A["DIAGRAM 11 — WALRUS SITE + TOKEN-GATED CONTENT (SEAL DECRYPT CLIENT-SIDE)"]:::muted
 
 subgraph Public["Public (Walrus Site)"]
-SITE["Walrus Site\\nindex.html / css / js\\n(public)"]:::muted
-PUBB["Public blobs\\nagenda/speakers/media refs"]:::card
+SITE["Walrus Site<br/>index.html / css / js<br/>(public)"]:::muted
+PUBB["Public blobs<br/>agenda/speakers/media refs"]:::card
 end
 
 subgraph Gated["Gated (Encrypted blobs)"]
-ENC["Encrypted blob\\nlocation/QR/access link\\n(or private agenda)"]:::accent
+ENC["Encrypted blob<br/>location/QR/access link<br/>(or private agenda)"]:::accent
 end
 
 subgraph Client["Client"]
-BROW["Browser (Next.js)\\nstatic page + wallet UX"]:::accent
-WALLET["Wallet / zkLogin\\nSui address"]:::muted
+BROW["Browser (Next.js)<br/>static page + wallet UX"]:::accent
+WALLET["Wallet / zkLogin<br/>Sui address"]:::muted
 end
 
 subgraph Policy["Policy + Truth"]
-SUI["Sui: TicketNFT ownership\\n(source of truth)"]:::muted
-SEAL["Seal SDK + key servers\\npolicy check → decrypt shares"]:::accent
+SUI["Sui: TicketNFT ownership<br/>(source of truth)"]:::muted
+SEAL["Seal SDK + key servers<br/>policy check → decrypt shares"]:::accent
 end
 
 SITE --> BROW
@@ -521,10 +521,10 @@ SEAL -->|"verify policy vs Sui"| SUI
 SEAL -->|"decrypt OK"| BROW
 
 SUI -->|"does not own"| BROW
-BROW -->|"show CTA:\\nBuy ticket / Register"| SITE
+BROW -->|"show CTA:<br/>Buy ticket / Register"| SITE
 
 subgraph Rule["Hard Rule"]
-R1["No secrets in site files.\\nGating is Seal-encrypted blobs + on-chain checks."]:::card
+R1["No secrets in site files.<br/>Gating is Seal-encrypted blobs + on-chain checks."]:::card
 end
 SITE -.-> R1
 `,
