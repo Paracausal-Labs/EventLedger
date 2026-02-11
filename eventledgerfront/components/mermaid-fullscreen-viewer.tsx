@@ -24,10 +24,10 @@ export function MermaidFullscreenViewer({
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Reset zoom and position when opening
+    // Reset zoom and position when opening — default to 450%
     useEffect(() => {
         if (isOpen) {
-            setZoom(1);
+            setZoom(4.5);
             setPosition({ x: 0, y: 0 });
         }
     }, [isOpen]);
